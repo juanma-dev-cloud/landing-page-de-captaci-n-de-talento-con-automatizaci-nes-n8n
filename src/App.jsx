@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { soloLetras, dniFormato, dniLetraBien, cpOk, cvOk } from "./validar.js";
+import { soloLetras, dniValido, filtrarDni, cpOk, cvOk } from "./validar.js";
 
 const estudiosTxt = {
   "Sin estudios": "Sin titulo; buscamos actitud y curiosidad por el codigo web.",
@@ -23,12 +23,16 @@ export default function App() {
   const [e, setE] = useState({});
   const [f, setF] = useState({
     nombre: "", apellidos: "", nac: "", dni: "", dir: "", ciudad: "", cp: "",
-    est: "", exp: "", carnet: "", cv: null,
+    est: "", estTxt: "", exp: "", carnet: "", cv: null,
   });
 
   function ch(k, v) {
-    setF((p) => ({ ...p, [k]: v }));
-    setE((p) => ({ ...p, [k]: "" }));
+    setF((p) => {
+      const n = { ...p, [k]: v };
+      if (k === "est" && (v === "Sin estudios" || !v)) n.estTxt = "";
+      return n;
+    });
+    setE((p) => ({ ...p, [k]: "", ...(k === "est" ? { estTxt: "" } : {}) }));
   }
 
   async function enviar(ev) {
@@ -42,12 +46,13 @@ export default function App() {
     else if (!soloLetras.test(f.apellidos.trim())) er.apellidos = "Solo letras";
     if (!f.nac) er.nac = "Obligatorio";
     else if (f.nac > new Date().toISOString().slice(0, 10)) er.nac = "Fecha no valida";
-    if (!dniFormato.test(f.dni) || !dniLetraBien(f.dni)) er.dni = "8 numeros y letra valida";
+    if (!dniValido(f.dni)) er.dni = "8 numeros y 1 letra al final (DNI español)";
     if (!f.dir.trim()) er.dir = "Obligatorio";
     if (!f.ciudad.trim()) er.ciudad = "Obligatorio";
     else if (!soloLetras.test(f.ciudad.trim())) er.ciudad = "Solo letras";
     if (!cpOk.test(f.cp)) er.cp = "5 digitos";
     if (!f.est) er.est = "Elige un nivel";
+    if (f.est && f.est !== "Sin estudios" && !f.estTxt.trim()) er.estTxt = "Explica que estudios has cursado";
     if (!f.carnet) er.carnet = "Elige carnet";
     if (!f.exp.trim()) er.exp = "Obligatorio";
     if (!f.cv) er.cv = "Sube tu CV";
@@ -60,7 +65,7 @@ export default function App() {
     }
     await new Promise((r) => setTimeout(r, 400));
     alert("Enviado OK (simulado)");
-    setF({ nombre: "", apellidos: "", nac: "", dni: "", dir: "", ciudad: "", cp: "", est: "", exp: "", carnet: "", cv: null });
+    setF({ nombre: "", apellidos: "", nac: "", dni: "", dir: "", ciudad: "", cp: "", est: "", estTxt: "", exp: "", carnet: "", cv: null });
     setCap(null);
     capRef.current?.reset();
     setBusy(false);
@@ -99,7 +104,7 @@ export default function App() {
           </div>
           <div>
             <label>DNI</label>
-            <input className={inp} placeholder="12345678Z" value={f.dni} onChange={(x) => ch("dni", x.target.value.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 9))} />
+            <input className={inp} placeholder="12345678Z" value={f.dni} onChange={(x) => ch("dni", filtrarDni(x.target.value))} />
             {err("dni")}
           </div>
           <div>
@@ -127,6 +132,13 @@ export default function App() {
             </select>
             {f.est && <p className="mt-1 rounded bg-indigo-50 p-2 text-xs text-indigo-900">{estudiosTxt[f.est]}</p>}
             {err("est")}
+            {f.est && f.est !== "Sin estudios" && (
+              <div className="mt-2">
+                <label>Que estudios has cursado</label>
+                <textarea className={inp} rows={2} value={f.estTxt} placeholder="Ej: CFGS DAW en el IES..." onChange={(x) => ch("estTxt", x.target.value)} />
+                {err("estTxt")}
+              </div>
+            )}
           </div>
           <div>
             <label>Experiencia laboral</label>
