@@ -6,4 +6,5 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: "/landing-page-de-captacion-de-talento-con-automatizaciones-n8n/",
   plugins: [react(), tailwindcss()],
+  build: { outDir: "dist" },
 });

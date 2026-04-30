@@ -2,7 +2,7 @@ name: GitHub Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
         run: npm run build:pages
         env:
           VITE_N8N_WEBHOOK_URL: ${{ secrets.VITE_N8N_WEBHOOK_URL }}
-      - name: Comprobar dist
+      - name: Comprobar salida
         run: test -f dist/index.html && ls -la dist
       - uses: actions/upload-pages-artifact@v3
         with:
