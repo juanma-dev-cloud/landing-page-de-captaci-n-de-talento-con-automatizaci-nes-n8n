@@ -2,6 +2,7 @@ name: Desplegar GitHub Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
   pages: write
@@ -21,12 +22,20 @@ jobs:
       - run: npm ci && npm run build
         env:
           VITE_N8N_WEBHOOK_URL: ${{ secrets.VITE_N8N_WEBHOOK_URL }}
+      - name: Debe ser HTML de producción (no /src/main.js)
+        run: |
+          grep -q 'assets/index-' dist/index.html || (cat dist/index.html; exit 1)
+          ! grep -q '/src/main.js' dist/index.html || exit 1
+          ls -la dist/assets/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.d.outputs.page_url }}
