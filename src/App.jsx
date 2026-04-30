@@ -15,9 +15,12 @@ const estudiosTxt = {
 };
 const carnets = ["Ninguno", "AM", "A1", "A2", "A", "B", "B96", "B+E", "BE", "C1", "C1+E", "C", "C+E", "D1", "D1+E", "D", "D+E"];
 const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || "";
 
 export default function App() {
   const capRef = useRef(null);
+  const recapHid = useRef(null);
+  const [fileKey, setFileKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [cap, setCap] = useState(null);
   const [e, setE] = useState({});
@@ -35,10 +38,9 @@ export default function App() {
     setE((p) => ({ ...p, [k]: "", ...(k === "est" ? { estTxt: "" } : {}) }));
   }
 
-  async function enviar(ev) {
+  function enviar(ev) {
     ev.preventDefault();
     if (busy) return;
-    setBusy(true);
     const er = {};
     if (!f.nombre.trim()) er.nombre = "Obligatorio";
     else if (!soloLetras.test(f.nombre.trim())) er.nombre = "Solo letras";
@@ -60,15 +62,34 @@ export default function App() {
     if (!cap) er.cap = "Marca el captcha";
     setE(er);
     if (Object.keys(er).length) {
-      setBusy(false);
       return;
     }
-    await new Promise((r) => setTimeout(r, 400));
-    alert("Enviado OK (simulado)");
-    setF({ nombre: "", apellidos: "", nac: "", dni: "", dir: "", ciudad: "", cp: "", est: "", estTxt: "", exp: "", carnet: "", cv: null });
-    setCap(null);
-    capRef.current?.reset();
-    setBusy(false);
+    if (!webhookUrl) {
+      alert("Falta VITE_N8N_WEBHOOK_URL (revisa .env o secret en GitHub Actions)");
+      return;
+    }
+    setBusy(true);
+    const form = ev.currentTarget;
+    if (recapHid.current) recapHid.current.value = cap || "";
+    const ts = form.querySelector('input[name="enviado_en"]');
+    if (ts) ts.value = new Date().toISOString();
+    form.action = webhookUrl;
+    form.target = "n8n_sink";
+    form.method = "post";
+    form.enctype = "multipart/form-data";
+    requestAnimationFrame(() => {
+      form.submit();
+      setTimeout(() => {
+        alert("Candidatura enviada.");
+        setF({ nombre: "", apellidos: "", nac: "", dni: "", dir: "", ciudad: "", cp: "", est: "", estTxt: "", exp: "", carnet: "", cv: null });
+        setCap(null);
+        capRef.current?.reset();
+        if (recapHid.current) recapHid.current.value = "";
+        if (ts) ts.value = "";
+        setFileKey((k) => k + 1);
+        setBusy(false);
+      }, 500);
+    });
   }
 
   const inp = "mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm";
@@ -85,46 +106,49 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-6">
+        <iframe title="envio n8n" name="n8n_sink" className="pointer-events-none absolute h-0 w-0 border-0 opacity-0" />
         <h2 className="mb-4 text-lg font-semibold">Candidatura</h2>
-        <form onSubmit={enviar} className="space-y-3 text-left text-sm">
+        <form onSubmit={enviar} method="post" encType="multipart/form-data" className="space-y-3 text-left text-sm">
+          <input ref={recapHid} type="hidden" name="g_recaptcha_response" defaultValue="" />
+          <input type="hidden" name="enviado_en" defaultValue="" />
           <div>
             <label>Nombre</label>
-            <input className={inp} value={f.nombre} onChange={(x) => ch("nombre", x.target.value.replace(/[0-9]/g, ""))} />
+            <input name="nombre" className={inp} value={f.nombre} onChange={(x) => ch("nombre", x.target.value.replace(/[0-9]/g, ""))} />
             {err("nombre")}
           </div>
           <div>
             <label>Apellidos</label>
-            <input className={inp} value={f.apellidos} onChange={(x) => ch("apellidos", x.target.value.replace(/[0-9]/g, ""))} />
+            <input name="apellidos" className={inp} value={f.apellidos} onChange={(x) => ch("apellidos", x.target.value.replace(/[0-9]/g, ""))} />
             {err("apellidos")}
           </div>
           <div>
             <label>Fecha nacimiento</label>
-            <input type="date" className={inp} value={f.nac} onChange={(x) => ch("nac", x.target.value)} />
+            <input name="fecha_nacimiento" type="date" className={inp} value={f.nac} onChange={(x) => ch("nac", x.target.value)} />
             {err("nac")}
           </div>
           <div>
             <label>DNI</label>
-            <input className={inp} placeholder="12345678Z" value={f.dni} onChange={(x) => ch("dni", filtrarDni(x.target.value))} />
+            <input name="dni" className={inp} placeholder="12345678Z" value={f.dni} onChange={(x) => ch("dni", filtrarDni(x.target.value))} />
             {err("dni")}
           </div>
           <div>
             <label>Direccion</label>
-            <input className={inp} value={f.dir} onChange={(x) => ch("dir", x.target.value)} />
+            <input name="direccion" className={inp} value={f.dir} onChange={(x) => ch("dir", x.target.value)} />
             {err("dir")}
           </div>
           <div>
             <label>Ciudad</label>
-            <input className={inp} value={f.ciudad} onChange={(x) => ch("ciudad", x.target.value.replace(/[0-9]/g, ""))} />
+            <input name="ciudad" className={inp} value={f.ciudad} onChange={(x) => ch("ciudad", x.target.value.replace(/[0-9]/g, ""))} />
             {err("ciudad")}
           </div>
           <div>
             <label>Codigo postal</label>
-            <input className={inp} maxLength={5} value={f.cp} onChange={(x) => ch("cp", x.target.value.replace(/\D/g, "").slice(0, 5))} />
+            <input name="codigo_postal" className={inp} maxLength={5} value={f.cp} onChange={(x) => ch("cp", x.target.value.replace(/\D/g, "").slice(0, 5))} />
             {err("cp")}
           </div>
           <div>
             <label>Nivel estudios</label>
-            <select className={inp} value={f.est} onChange={(x) => ch("est", x.target.value)}>
+            <select name="nivel_estudios" className={inp} value={f.est} onChange={(x) => ch("est", x.target.value)}>
               <option value="">-- elige --</option>
               {Object.keys(estudiosTxt).map((k) => (
                 <option key={k} value={k}>{k}</option>
@@ -135,19 +159,19 @@ export default function App() {
             {f.est && f.est !== "Sin estudios" && (
               <div className="mt-2">
                 <label>Que estudios has cursado</label>
-                <textarea className={inp} rows={2} value={f.estTxt} placeholder="Ej: CFGS DAW en el IES..." onChange={(x) => ch("estTxt", x.target.value)} />
+                <textarea name="estudios_detalle" className={inp} rows={2} value={f.estTxt} placeholder="Ej: CFGS DAW en el IES..." onChange={(x) => ch("estTxt", x.target.value)} />
                 {err("estTxt")}
               </div>
             )}
           </div>
           <div>
             <label>Experiencia laboral</label>
-            <textarea className={inp} rows={3} value={f.exp} onChange={(x) => ch("exp", x.target.value)} />
+            <textarea name="experiencia" className={inp} rows={3} value={f.exp} onChange={(x) => ch("exp", x.target.value)} />
             {err("exp")}
           </div>
           <div>
             <label>Carnet</label>
-            <select className={inp} value={f.carnet} onChange={(x) => ch("carnet", x.target.value)}>
+            <select name="carnet" className={inp} value={f.carnet} onChange={(x) => ch("carnet", x.target.value)}>
               <option value="">-- elige --</option>
               {carnets.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -157,7 +181,7 @@ export default function App() {
           </div>
           <div>
             <label>CV (pdf, docx, odt)</label>
-            <input type="file" accept=".pdf,.docx,.odt,application/pdf" className={inp} onChange={(x) => ch("cv", x.target.files?.[0] || null)} />
+            <input key={fileKey} name="cv" type="file" accept=".pdf,.docx,.odt,application/pdf" className={inp} onChange={(x) => ch("cv", x.target.files?.[0] || null)} />
             {err("cv")}
           </div>
           <div className="flex justify-center py-2">
