@@ -1,9 +1,9 @@
-const letrasDni = "TRWAGMYFPDXBNJZSQVHLCKE";
 export const soloLetras = /^[a-záéíóúüñÁÉÍÓÚÜÑ\s]+$/i;
 export const cpOk = /^\d{5}$/;
 export const cvOk = /\.(pdf|docx|odt)$/i;
+export const dniPrueba = /^\d{8}[A-Z]$/;
 
-/** Solo 8 numeros y 1 letra al final (mayuscula). */
+/** 8 numeros y 1 letra al final (para practicar; no comprueba letra oficial). */
 export function filtrarDni(raw) {
   const u = String(raw).toUpperCase().replace(/[^0-9A-Z]/g, "");
   let s = "";
@@ -19,9 +19,5 @@ export function filtrarDni(raw) {
 }
 
 export function dniValido(dni) {
-  if (!dni || dni.length !== 9) return false;
-  if (!/^\d{8}[A-Z]$/.test(dni)) return false;
-  const n = dni.slice(0, 8);
-  if (n[0] === "0" && n === "00000000") return false;
-  return letrasDni[parseInt(n, 10) % 23] === dni[8];
+  return dniPrueba.test(String(dni || "").toUpperCase().trim());
 }

@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run build:pages
         env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
           VITE_N8N_WEBHOOK_URL: ${{ secrets.VITE_N8N_WEBHOOK_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:

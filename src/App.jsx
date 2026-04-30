@@ -48,7 +48,7 @@ export default function App() {
     else if (!soloLetras.test(f.apellidos.trim())) er.apellidos = "Solo letras";
     if (!f.nac) er.nac = "Obligatorio";
     else if (f.nac > new Date().toISOString().slice(0, 10)) er.nac = "Fecha no valida";
-    if (!dniValido(f.dni)) er.dni = "8 numeros y 1 letra al final (DNI español)";
+    if (!dniValido(f.dni)) er.dni = "8 numeros y 1 letra (prueba, sin comprobar letra real)";
     if (!f.dir.trim()) er.dir = "Obligatorio";
     if (!f.ciudad.trim()) er.ciudad = "Obligatorio";
     else if (!soloLetras.test(f.ciudad.trim())) er.ciudad = "Solo letras";
