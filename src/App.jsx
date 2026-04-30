@@ -15,7 +15,9 @@ const estudiosTxt = {
 };
 const carnets = ["Ninguno", "AM", "A1", "A2", "A", "B", "B96", "B+E", "BE", "C1", "C1+E", "C", "C+E", "D1", "D1+E", "D", "D+E"];
 const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
-const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || "";
+const webhookUrl =
+  import.meta.env.VITE_N8N_WEBHOOK_URL ||
+  "https://juanmadevcloud.app.n8n.cloud/webhook/a455da2f-60ed-48e3-8d71-a7cab42c6786";
 
 export default function App() {
   const capRef = useRef(null);
@@ -62,10 +64,6 @@ export default function App() {
     if (!cap) er.cap = "Marca el captcha";
     setE(er);
     if (Object.keys(er).length) {
-      return;
-    }
-    if (!webhookUrl) {
-      alert("Falta VITE_N8N_WEBHOOK_URL (revisa .env o secret en GitHub Actions)");
       return;
     }
     setBusy(true);
