@@ -2,10 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// Para GitHub Pages: nombre del repo entre barras (cambia si renombras el repo)
-const basePath = process.env.VITE_BASE_PATH || "/";
-
+// Igual que en portfolio: base = "/" + nombre del repo en GitHub + "/" (cambia si renombras el repo)
 export default defineConfig({
-  base: basePath.endsWith("/") ? basePath : `${basePath}/`,
+  base: "/landing-page-de-captacion-de-talento-con-automatizaciones-n8n/",
   plugins: [react(), tailwindcss()],
 });
